@@ -52,21 +52,16 @@ class MouseRecorderRepeater:
         user32 = ctypes.windll.user32
         gdi32 = ctypes.windll.gdi32
         
-        # Get the device context of the entire screen
         hdc = user32.GetDC(None)
         
-        # Physical width and height
         self.screen_width = gdi32.GetDeviceCaps(hdc, 8)  # HORZRES
         self.screen_height = gdi32.GetDeviceCaps(hdc, 10)  # VERTRES
         
-        # Logical width and height (accounting for scaling)
         logical_width = gdi32.GetDeviceCaps(hdc, 118)  # DESKTOPHORZRES
         logical_height = gdi32.GetDeviceCaps(hdc, 117)  # DESKTOPVERTRES
         
-        # Release the device context
         user32.ReleaseDC(None, hdc)
         
-        # Calculate scaling factors
         self.scale_x = self.screen_width / logical_width
         self.scale_y = self.screen_height / logical_height
         self.offset_x = 0
@@ -105,10 +100,12 @@ class MouseRecorderRepeater:
             elif len(self.calibration_points) == 2:
                 self.calculate_calibration()
                 self.calibrating = False
-        elif self.recording and pressed:
+        elif self.recording:
             current_time = time.time()
             self.actions.append(('click', x, y, button, pressed, current_time - self.last_action_time))
             self.last_action_time = current_time
+            if pressed:
+                print(f"Recorded {'right' if button == Button.right else 'left'} click at ({x}, {y})")
 
     def calculate_calibration(self):
         tl_x, tl_y = self.calibration_points[0]
@@ -166,6 +163,7 @@ class MouseRecorderRepeater:
                     if action[0] == 'click':
                         if action[4]:  # pressed
                             self.mouse.press(action[3])
+                            print(f"Replayed {'right' if action[3] == Button.right else 'left'} click at ({scaled_x}, {scaled_y})")
                         else:
                             self.mouse.release(action[3])
 
